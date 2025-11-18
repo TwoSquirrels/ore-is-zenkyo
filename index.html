@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俺は全強 およー! 😎</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: crosshair;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .zenkyo-text {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            pointer-events: none;
+            animation: rainbow 2s linear infinite;
+            transition: transform 0.1s;
+        }
+
+        .oyoo-text {
+            position: absolute;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            pointer-events: none;
+            animation: spin 3s linear infinite;
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 64px;
+            user-select: none;
+            pointer-events: none;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .click-effect {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 5px solid #fff;
+            border-radius: 50%;
+            animation: explode 0.6s ease-out forwards;
+        }
+
+        .cursor-trail {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fade-out 1s ease-out forwards;
+        }
+
+        @keyframes rainbow {
+            0% { color: #ff0000; }
+            16% { color: #ff7f00; }
+            33% { color: #ffff00; }
+            50% { color: #00ff00; }
+            66% { color: #0000ff; }
+            83% { color: #8b00ff; }
+            100% { color: #ff0000; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            text-align: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">🎉 クリックしておよー! 🎉</div>
+
+    <script>
+        // Configuration
+        const NUM_ZENKYO = 15;
+        const NUM_OYOO = 8;
+        const NUM_EMOJIS = 20;
+        const EMOJIS = ['😎', '🎉', '✨', '💥', '🌈', '🎪', '🎨', '🔥', '⭐', '💫', '🎭', '🎸', '🚀', '🌟', '💖', '🎯'];
+        
+        class BouncingElement {
+            constructor(text, className) {
+                this.element = document.createElement('div');
+                this.element.className = className;
+                this.element.textContent = text;
+                this.element.style.left = Math.random() * (window.innerWidth - 200) + 'px';
+                this.element.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+                document.body.appendChild(this.element);
+                
+                this.x = parseFloat(this.element.style.left);
+                this.y = parseFloat(this.element.style.top);
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 5;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+                
+                const rect = this.element.getBoundingClientRect();
+                
+                if (this.x <= 0 || this.x >= window.innerWidth - rect.width) {
+                    this.vx *= -1;
+                    this.x = Math.max(0, Math.min(this.x, window.innerWidth - rect.width));
+                }
+                
+                if (this.y <= 0 || this.y >= window.innerHeight - rect.height) {
+                    this.vy *= -1;
+                    this.y = Math.max(0, Math.min(this.y, window.innerHeight - rect.height));
+                }
+                
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+                this.element.style.transform = `rotate(${this.rotation}deg)`;
+            }
+            
+            repelFrom(x, y, force) {
+                const dx = this.x - x;
+                const dy = this.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 200) {
+                    const angle = Math.atan2(dy, dx);
+                    this.vx += Math.cos(angle) * force;
+                    this.vy += Math.sin(angle) * force;
+                    
+                    // Limit speed
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    if (speed > 15) {
+                        this.vx = (this.vx / speed) * 15;
+                        this.vy = (this.vy / speed) * 15;
+                    }
+                }
+            }
+        }
+        
+        // Create bouncing elements
+        const elements = [];
+        
+        for (let i = 0; i < NUM_ZENKYO; i++) {
+            elements.push(new BouncingElement('俺は全強', 'zenkyo-text'));
+        }
+        
+        for (let i = 0; i < NUM_OYOO; i++) {
+            elements.push(new BouncingElement('およー', 'oyoo-text'));
+        }
+        
+        for (let i = 0; i < NUM_EMOJIS; i++) {
+            const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+            elements.push(new BouncingElement(emoji, 'emoji'));
+        }
+        
+        // Animation loop
+        function animate() {
+            elements.forEach(el => el.update());
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // Mouse tracking - create colorful trail
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            // Create trail effect
+            if (Math.random() > 0.7) {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = (mouseX - 10) + 'px';
+                trail.style.top = (mouseY - 10) + 'px';
+                trail.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(trail);
+                
+                setTimeout(() => trail.remove(), 1000);
+            }
+            
+            // Repel elements from cursor
+            elements.forEach(el => {
+                el.repelFrom(mouseX, mouseY, 0.5);
+            });
+        });
+        
+        // Click effects
+        let clickCount = 0;
+        document.addEventListener('click', (e) => {
+            clickCount++;
+            
+            // Create explosion effect
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.style.left = (e.clientX - 50) + 'px';
+            effect.style.top = (e.clientY - 50) + 'px';
+            effect.style.borderColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            document.body.appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 600);
+            
+            // Add new elements on click
+            const newEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+            const newElement = new BouncingElement(newEmoji, 'emoji');
+            newElement.x = e.clientX;
+            newElement.y = e.clientY;
+            newElement.element.style.left = newElement.x + 'px';
+            newElement.element.style.top = newElement.y + 'px';
+            elements.push(newElement);
+            
+            // Occasionally add "俺は全強" or "およー"
+            if (clickCount % 3 === 0) {
+                const newText = new BouncingElement('俺は全強', 'zenkyo-text');
+                newText.x = e.clientX;
+                newText.y = e.clientY;
+                newText.element.style.left = newText.x + 'px';
+                newText.element.style.top = newText.y + 'px';
+                elements.push(newText);
+            }
+            
+            if (clickCount % 5 === 0) {
+                const newOyoo = new BouncingElement('およー', 'oyoo-text');
+                newOyoo.x = e.clientX;
+                newOyoo.y = e.clientY;
+                newOyoo.element.style.left = newOyoo.x + 'px';
+                newOyoo.element.style.top = newOyoo.y + 'px';
+                elements.push(newOyoo);
+            }
+            
+            // Strong repel on click
+            elements.forEach(el => {
+                el.repelFrom(e.clientX, e.clientY, 5);
+            });
+            
+            // Update info text
+            const info = document.getElementById('info');
+            const messages = [
+                '🎉 およー! ' + '🌈'.repeat(clickCount % 5 + 1),
+                '💥 俺は全強だ! 😎',
+                '✨ カオス! ' + 'およー '.repeat(clickCount % 3 + 1) + '✨',
+                '🎪 クリック最高! 🎉',
+                '🔥 もっと暴れろ! 💫'
+            ];
+            info.textContent = messages[clickCount % messages.length];
+        });
+        
+        // Change background color occasionally
+        setInterval(() => {
+            const hue1 = Math.random() * 360;
+            const hue2 = (hue1 + 60) % 360;
+            document.body.style.background = 
+                `linear-gradient(135deg, hsl(${hue1}, 70%, 60%) 0%, hsl(${hue2}, 70%, 50%) 100%)`;
+        }, 3000);
+    </script>
+</body>
+</html>
